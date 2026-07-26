@@ -39,6 +39,7 @@ class ListController extends Controller
             ->whereHas('user', fn ($q) => $q->where('username', $username))
             ->where('slug', $slug)
             ->with(['user', 'items.film'])
+            ->withCount('comments')
             ->firstOrFail();
 
         return new FilmListResource($list);

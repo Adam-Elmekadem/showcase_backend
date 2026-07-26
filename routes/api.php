@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\FilmController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ListController;
@@ -22,6 +23,8 @@ Route::get('/films/{slug}', [FilmController::class, 'show']);
 Route::get('/films/{slug}/showcases', [FilmController::class, 'showcases']);
 
 Route::get('/people/{slug}', [PersonController::class, 'show']);
+
+Route::get('/comments', [CommentController::class, 'index']);
 
 Route::get('/logs', [LogController::class, 'index']);
 Route::get('/lists', [ListController::class, 'index']);
@@ -67,4 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{username}/suggestions', [SuggestionController::class, 'store']);
     Route::delete('/suggestions/{suggestion}', [SuggestionController::class, 'destroy']);
     Route::patch('/suggestions/{suggestion}/read', [SuggestionController::class, 'markRead']);
+
+    Route::post('/comments', [CommentController::class, 'store']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 });

@@ -36,6 +36,7 @@ class LogResource extends JsonResource
                     ? $this->likes->contains('user_id', $viewer->id)
                     : $this->likes()->where('user_id', $viewer->id)->exists();
             }),
+            'comments_count' => $this->comments_count,
             'user' => new UserResource($this->whenLoaded('user')),
             'film' => new FilmResource($this->whenLoaded('film')),
             'created_at' => $this->created_at?->toIso8601String(),

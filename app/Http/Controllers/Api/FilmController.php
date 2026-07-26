@@ -81,6 +81,7 @@ class FilmController extends Controller
     {
         $film = Film::where('slug', $slug)->firstOrFail();
         $film->load(['directors', 'people']);
+        $film->loadCount('comments');
 
         return new FilmResource($film);
     }

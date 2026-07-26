@@ -23,6 +23,7 @@ class FilmListResource extends JsonResource
             'is_ranked' => $this->is_ranked,
             'is_public' => $this->is_public,
             'items_count' => $this->whenCounted('items'),
+            'comments_count' => $this->whenCounted('comments'),
             'user' => new UserResource($this->whenLoaded('user')),
             'items' => $this->whenLoaded('items', function () {
                 return $this->items->map(fn ($item) => [

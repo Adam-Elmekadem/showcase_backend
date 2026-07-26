@@ -23,7 +23,7 @@ class LogController extends Controller
 
         $logs = LogEntry::query()
             ->with(['user', 'film'])
-            ->withCount('likes')
+            ->withCount(['likes', 'comments'])
             ->when($data['username'] ?? null, fn ($query, $username) => $query->whereHas(
                 'user', fn ($q) => $q->where('username', $username)
             ))
@@ -123,7 +123,7 @@ class LogController extends Controller
             $log->increment('likes_count');
         }
 
-        return new LogResource($log->fresh(['user', 'film']));
+        return new LogResource($log->fresh(['user', 'film'])->loadCount('comments'));
     }
 
     public function unlike(Request $request, LogEntry $log)
@@ -134,6 +134,6 @@ class LogController extends Controller
             $log->decrement('likes_count');
         }
 
-        return new LogResource($log->fresh(['user', 'film']));
+        return new LogResource($log->fresh(['user', 'film'])->loadCount('comments'));
     }
 }
