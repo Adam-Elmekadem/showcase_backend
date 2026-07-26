@@ -182,6 +182,7 @@ class FilmController extends Controller
                 'genres' => collect($movie['genre_ids'] ?? [])->map(fn ($id) => $genreNames->get($id))->filter()->values()->all(),
                 'viewer_watched' => (bool) $viewerLog,
                 'viewer_rating' => $viewerLog?->rating_overall,
+                'viewer_log_id' => $viewerLog?->id,
             ];
         })->values()->all();
     }

@@ -35,6 +35,7 @@ class FilmResource extends JsonResource
             'comments_count' => $this->whenCounted('comments'),
             'viewer_watched' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->exists()),
             'viewer_rating' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->latest()->value('rating_overall')),
+            'viewer_log_id' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->latest()->value('id')),
             'directors' => PersonResource::collection($this->whenLoaded('directors')),
             'credits' => $this->when($this->relationLoaded('people'), function () {
                 return $this->people->groupBy('pivot.role')->map(
