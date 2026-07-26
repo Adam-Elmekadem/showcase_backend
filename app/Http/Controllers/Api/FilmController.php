@@ -11,6 +11,16 @@ use Illuminate\Http\Request;
 
 class FilmController extends Controller
 {
+    private const SORT_OPTIONS = [
+        'popularity.desc',
+        'popularity.asc',
+        'vote_average.desc',
+        'vote_average.asc',
+        'primary_release_date.desc',
+        'primary_release_date.asc',
+        'title.asc',
+    ];
+
     public function __construct(
         private readonly TmdbClient $tmdb,
         private readonly FilmSyncService $filmSync,
@@ -23,18 +33,44 @@ class FilmController extends Controller
         ]);
 
         $results = $this->tmdb->searchMovies($data['q']);
-        $imageBase = rtrim(config('services.tmdb.image_base_url'), '/');
 
         return response()->json([
-            'data' => collect($results)->map(fn ($movie) => [
-                'tmdb_id' => $movie['id'],
-                'title' => $movie['title'],
-                'release_date' => $movie['release_date'] ?: null,
-                'year' => $movie['release_date'] ? substr($movie['release_date'], 0, 4) : null,
-                'poster_url' => $movie['poster_path'] ? "{$imageBase}/w342{$movie['poster_path']}" : null,
-                'overview' => $movie['overview'],
-            ])->values(),
+            'data' => $this->mapSummaries($results),
         ]);
+    }
+
+    public function discover(Request $request)
+    {
+        $data = $request->validate([
+            'genre' => ['nullable', 'integer'],
+            'year' => ['nullable', 'integer', 'min:1888', 'max:2100'],
+            'min_rating' => ['nullable', 'numeric', 'min:0', 'max:10'],
+            'sort_by' => ['nullable', 'string', 'in:'.implode(',', self::SORT_OPTIONS)],
+            'page' => ['nullable', 'integer', 'min:1', 'max:500'],
+        ]);
+
+        $params = array_filter([
+            'with_genres' => $data['genre'] ?? null,
+            'primary_release_year' => $data['year'] ?? null,
+            'vote_average.gte' => $data['min_rating'] ?? null,
+            'sort_by' => $data['sort_by'] ?? 'popularity.desc',
+            'vote_count.gte' => 20,
+        ], fn ($value) => $value !== null);
+
+        $response = $this->tmdb->discoverMovies($params, $data['page'] ?? 1);
+
+        return response()->json([
+            'data' => $this->mapSummaries($response['results'] ?? []),
+            'meta' => [
+                'page' => $response['page'] ?? 1,
+                'total_pages' => $response['total_pages'] ?? 1,
+            ],
+        ]);
+    }
+
+    public function genres()
+    {
+        return response()->json(['data' => $this->tmdb->genreList()]);
     }
 
     public function show(string $slug)
@@ -55,5 +91,20 @@ class FilmController extends Controller
         $film->load(['directors', 'people']);
 
         return new FilmResource($film);
+    }
+
+    private function mapSummaries(array $movies): array
+    {
+        $imageBase = rtrim(config('services.tmdb.image_base_url'), '/');
+
+        return collect($movies)->map(fn ($movie) => [
+            'tmdb_id' => $movie['id'],
+            'title' => $movie['title'],
+            'release_date' => $movie['release_date'] ?: null,
+            'year' => $movie['release_date'] ? substr($movie['release_date'], 0, 4) : null,
+            'poster_url' => $movie['poster_path'] ? "{$imageBase}/w342{$movie['poster_path']}" : null,
+            'overview' => $movie['overview'],
+            'vote_average' => $movie['vote_average'] ?? null,
+        ])->values()->all();
     }
 }

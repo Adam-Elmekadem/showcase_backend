@@ -14,6 +14,9 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/films/search', [FilmController::class, 'search']);
+Route::get('/films/discover', [FilmController::class, 'discover']);
+Route::get('/films/genres', [FilmController::class, 'genres']);
+Route::post('/films/sync', [FilmController::class, 'sync']);
 Route::get('/films/{slug}', [FilmController::class, 'show']);
 
 Route::get('/people/{slug}', [PersonController::class, 'show']);
@@ -31,8 +34,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/me', [UserController::class, 'update']);
-
-    Route::post('/films/sync', [FilmController::class, 'sync']);
 
     Route::post('/logs', [LogController::class, 'store']);
     Route::patch('/logs/{log}', [LogController::class, 'update']);

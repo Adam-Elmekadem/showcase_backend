@@ -27,6 +27,21 @@ class TmdbClient
         ])['results'] ?? [];
     }
 
+    public function discoverMovies(array $params, int $page = 1): array
+    {
+        return $this->get('/discover/movie', array_merge([
+            'page' => $page,
+            'include_adult' => false,
+        ], $params));
+    }
+
+    public function genreList(): array
+    {
+        return Cache::remember('tmdb:genres', now()->addWeek(), function () {
+            return $this->get('/genre/movie/list')['genres'] ?? [];
+        });
+    }
+
     public function movieDetails(int $tmdbId): array
     {
         return Cache::remember("tmdb:movie:{$tmdbId}", now()->addDay(), function () use ($tmdbId) {
