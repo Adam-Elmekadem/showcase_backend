@@ -74,6 +74,16 @@ class User extends Authenticatable
         return $this->hasMany(FavoriteFilm::class)->orderBy('position');
     }
 
+    public function suggestionsReceived(): HasMany
+    {
+        return $this->hasMany(Suggestion::class, 'recipient_id');
+    }
+
+    public function suggestionsSent(): HasMany
+    {
+        return $this->hasMany(Suggestion::class, 'sender_id');
+    }
+
     public function following(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'follows', 'follower_id', 'followee_id')->withTimestamps();
@@ -82,5 +92,20 @@ class User extends Authenticatable
     public function followers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'follows', 'followee_id', 'follower_id')->withTimestamps();
+    }
+
+    /**
+     * Users this user follows who also follow back -- the pool suggestions
+     * can be sent to.
+     */
+    public function mutuals(): BelongsToMany
+    {
+        return $this->following()->whereIn('users.id', $this->followers()->pluck('users.id'));
+    }
+
+    public function isMutualWith(User $other): bool
+    {
+        return $this->following()->where('users.id', $other->id)->exists()
+            && $this->followers()->where('users.id', $other->id)->exists();
     }
 }

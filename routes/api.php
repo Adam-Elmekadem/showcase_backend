@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\PersonController;
+use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WatchlistController;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/me/favorites/{filmId}', [UserController::class, 'removeFavorite']);
 
     Route::get('/films/{slug}/friends-activity', [FilmController::class, 'friendsActivity']);
+    Route::get('/films/{slug}/my-showcases', [FilmController::class, 'myShowcases']);
 
     Route::post('/logs', [LogController::class, 'store']);
     Route::patch('/logs/{log}', [LogController::class, 'update']);
@@ -59,4 +61,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/users/{username}/follow', [FollowController::class, 'store']);
     Route::delete('/users/{username}/follow', [FollowController::class, 'destroy']);
+    Route::get('/me/mutuals', [FollowController::class, 'mutuals']);
+
+    Route::get('/me/suggestions', [SuggestionController::class, 'index']);
+    Route::post('/users/{username}/suggestions', [SuggestionController::class, 'store']);
+    Route::delete('/suggestions/{suggestion}', [SuggestionController::class, 'destroy']);
+    Route::patch('/suggestions/{suggestion}/read', [SuggestionController::class, 'markRead']);
 });

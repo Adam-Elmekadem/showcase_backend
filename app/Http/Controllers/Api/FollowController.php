@@ -41,4 +41,9 @@ class FollowController extends Controller
 
         return UserResource::collection($user->following()->paginate(30));
     }
+
+    public function mutuals(Request $request)
+    {
+        return UserResource::collection($request->user()->mutuals()->get());
+    }
 }

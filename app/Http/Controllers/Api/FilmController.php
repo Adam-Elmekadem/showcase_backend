@@ -101,6 +101,24 @@ class FilmController extends Controller
         return FilmListResource::collection($showcases);
     }
 
+    public function myShowcases(Request $request, string $slug)
+    {
+        $film = Film::where('slug', $slug)->firstOrFail();
+
+        $showcases = FilmList::where('user_id', $request->user()->id)
+            ->withCount('items')
+            ->latest()
+            ->get()
+            ->map(function (FilmList $list) use ($film, $request) {
+                $data = (new FilmListResource($list))->resolve($request);
+                $data['contains_film'] = $list->items()->where('film_id', $film->id)->exists();
+
+                return $data;
+            });
+
+        return response()->json(['data' => $showcases]);
+    }
+
     public function friendsActivity(Request $request, string $slug)
     {
         $film = Film::where('slug', $slug)->firstOrFail();

@@ -47,7 +47,7 @@ class LogController extends Controller
             'film_id' => $film->id,
             'watched_on' => $data['watched_on'] ?? null,
             'is_rewatch' => $data['is_rewatch'] ?? false,
-            'rating_overall' => $data['rating_overall'] ?? null,
+            'rating_overall' => $this->averageRating($data),
             'rating_story' => $data['rating_story'] ?? null,
             'rating_direction' => $data['rating_direction'] ?? null,
             'rating_acting' => $data['rating_acting'] ?? null,
@@ -64,9 +64,46 @@ class LogController extends Controller
     {
         abort_if($log->user_id !== $request->user()->id, 403);
 
-        $log->update($request->safe()->except('tmdb_id'));
+        $data = $request->safe()->except('tmdb_id');
+
+        // Partial updates may omit aspect fields entirely; fall back to the
+        // log's current value for any that weren't sent in this request.
+        $effective = [];
+        foreach (self::ASPECT_FIELDS as $field) {
+            $effective[$field] = array_key_exists($field, $data) ? $data[$field] : $log->$field;
+        }
+        $data['rating_overall'] = $this->averageRating($effective);
+
+        $log->update($data);
 
         return new LogResource($log->load(['user', 'film']));
+    }
+
+    private const ASPECT_FIELDS = [
+        'rating_story',
+        'rating_direction',
+        'rating_acting',
+        'rating_cinematography',
+        'rating_music',
+    ];
+
+    /**
+     * The overall rating is never set directly by the client -- it is the
+     * average of whichever aspect ratings (story/direction/acting/
+     * cinematography/music) were actually filled in, so a log with only
+     * two aspects rated doesn't get dragged down by unrated ones.
+     */
+    private function averageRating(array $data): ?float
+    {
+        $aspects = collect(self::ASPECT_FIELDS)
+            ->map(fn ($field) => $data[$field] ?? null)
+            ->filter(fn ($value) => $value !== null);
+
+        if ($aspects->isEmpty()) {
+            return null;
+        }
+
+        return round($aspects->average() * 2) / 2;
     }
 
     public function destroy(Request $request, LogEntry $log)

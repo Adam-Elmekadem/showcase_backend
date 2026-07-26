@@ -28,7 +28,6 @@ class StoreLogRequest extends FormRequest
             'tmdb_id' => ['required', 'integer'],
             'watched_on' => ['nullable', 'date'],
             'is_rewatch' => ['boolean'],
-            'rating_overall' => $rating,
             'rating_story' => $rating,
             'rating_direction' => $rating,
             'rating_acting' => $rating,
