@@ -39,7 +39,7 @@ class FilmController extends Controller
         $results = $this->tmdb->searchMovies($data['q']);
 
         return response()->json([
-            'data' => $this->mapSummaries($results),
+            'data' => $this->mapSummaries($results, $request),
         ]);
     }
 
@@ -64,7 +64,7 @@ class FilmController extends Controller
         $response = $this->tmdb->discoverMovies($params, $data['page'] ?? 1);
 
         return response()->json([
-            'data' => $this->mapSummaries($response['results'] ?? []),
+            'data' => $this->mapSummaries($response['results'] ?? [], $request),
             'meta' => [
                 'page' => $response['page'] ?? 1,
                 'total_pages' => $response['total_pages'] ?? 1,
@@ -148,20 +148,41 @@ class FilmController extends Controller
         return new FilmResource($film);
     }
 
-    private function mapSummaries(array $movies): array
+    private function mapSummaries(array $movies, ?Request $request = null): array
     {
         $imageBase = rtrim(config('services.tmdb.image_base_url'), '/');
         $genreNames = collect($this->tmdb->genreList())->pluck('name', 'id');
 
-        return collect($movies)->map(fn ($movie) => [
-            'tmdb_id' => $movie['id'],
-            'title' => $movie['title'],
-            'release_date' => $movie['release_date'] ?: null,
-            'year' => $movie['release_date'] ? substr($movie['release_date'], 0, 4) : null,
-            'poster_url' => $movie['poster_path'] ? "{$imageBase}/w342{$movie['poster_path']}" : null,
-            'overview' => $movie['overview'],
-            'vote_average' => $movie['vote_average'] ?? null,
-            'genres' => collect($movie['genre_ids'] ?? [])->map(fn ($id) => $genreNames->get($id))->filter()->values()->all(),
-        ])->values()->all();
+        $viewer = $request?->user('sanctum');
+        $viewerLogsByTmdbId = collect();
+
+        if ($viewer) {
+            $tmdbIds = collect($movies)->pluck('id');
+            $viewerLogsByTmdbId = LogEntry::query()
+                ->where('user_id', $viewer->id)
+                ->whereHas('film', fn ($query) => $query->whereIn('tmdb_id', $tmdbIds))
+                ->with('film:id,tmdb_id')
+                ->latest()
+                ->get()
+                ->unique(fn ($log) => $log->film->tmdb_id)
+                ->keyBy(fn ($log) => $log->film->tmdb_id);
+        }
+
+        return collect($movies)->map(function ($movie) use ($imageBase, $genreNames, $viewerLogsByTmdbId) {
+            $viewerLog = $viewerLogsByTmdbId->get($movie['id']);
+
+            return [
+                'tmdb_id' => $movie['id'],
+                'title' => $movie['title'],
+                'release_date' => $movie['release_date'] ?: null,
+                'year' => $movie['release_date'] ? substr($movie['release_date'], 0, 4) : null,
+                'poster_url' => $movie['poster_path'] ? "{$imageBase}/w342{$movie['poster_path']}" : null,
+                'overview' => $movie['overview'],
+                'vote_average' => $movie['vote_average'] ?? null,
+                'genres' => collect($movie['genre_ids'] ?? [])->map(fn ($id) => $genreNames->get($id))->filter()->values()->all(),
+                'viewer_watched' => (bool) $viewerLog,
+                'viewer_rating' => $viewerLog?->rating_overall,
+            ];
+        })->values()->all();
     }
 }

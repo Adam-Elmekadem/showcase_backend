@@ -33,6 +33,8 @@ class FilmResource extends JsonResource
             'genres' => $this->genres,
             'vote_average' => $this->vote_average !== null ? (float) $this->vote_average : null,
             'comments_count' => $this->whenCounted('comments'),
+            'viewer_watched' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->exists()),
+            'viewer_rating' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->latest()->value('rating_overall')),
             'directors' => PersonResource::collection($this->whenLoaded('directors')),
             'credits' => $this->when($this->relationLoaded('people'), function () {
                 return $this->people->groupBy('pivot.role')->map(
