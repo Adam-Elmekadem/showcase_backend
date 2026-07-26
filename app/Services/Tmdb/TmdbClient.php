@@ -58,6 +58,13 @@ class TmdbClient
         });
     }
 
+    public function personMovieCredits(int $tmdbId): array
+    {
+        return Cache::remember("tmdb:person-credits:{$tmdbId}", now()->addDay(), function () use ($tmdbId) {
+            return $this->get("/person/{$tmdbId}/movie_credits");
+        });
+    }
+
     private function get(string $path, array $query = []): array
     {
         if ($this->key === '') {
