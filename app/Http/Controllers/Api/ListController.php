@@ -18,6 +18,7 @@ class ListController extends Controller
     {
         $data = $request->validate([
             'username' => ['nullable', 'string'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $lists = FilmList::query()
@@ -28,7 +29,7 @@ class ListController extends Controller
                 'user', fn ($q) => $q->where('username', $username)
             ))
             ->latest()
-            ->paginate(20);
+            ->paginate($data['per_page'] ?? 20);
 
         return FilmListResource::collection($lists);
     }
