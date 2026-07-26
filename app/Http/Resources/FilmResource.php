@@ -31,6 +31,7 @@ class FilmResource extends JsonResource
             'original_language' => $this->original_language,
             'countries' => $this->countries,
             'genres' => $this->genres,
+            'vote_average' => $this->vote_average !== null ? (float) $this->vote_average : null,
             'directors' => PersonResource::collection($this->whenLoaded('directors')),
             'credits' => $this->when($this->relationLoaded('people'), function () {
                 return $this->people->groupBy('pivot.role')->map(

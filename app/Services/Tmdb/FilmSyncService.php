@@ -47,6 +47,7 @@ class FilmSyncService
                 'original_language' => $details['original_language'] ?? null,
                 'countries' => collect($details['production_countries'] ?? [])->pluck('name')->all(),
                 'genres' => collect($details['genres'] ?? [])->pluck('name')->all(),
+                'vote_average' => $details['vote_average'] ?? null,
             ]
         );
 

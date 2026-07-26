@@ -25,6 +25,7 @@ class Film extends Model
         'original_language',
         'countries',
         'genres',
+        'vote_average',
     ];
 
     protected function casts(): array
