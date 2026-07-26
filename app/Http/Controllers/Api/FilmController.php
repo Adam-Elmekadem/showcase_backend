@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\FilmListResource;
 use App\Http\Resources\FilmResource;
+use App\Http\Resources\LogResource;
 use App\Models\Film;
+use App\Models\FilmList;
+use App\Models\LogEntry;
 use App\Services\Tmdb\FilmSyncService;
 use App\Services\Tmdb\TmdbClient;
 use Illuminate\Http\Request;
@@ -79,6 +83,38 @@ class FilmController extends Controller
         $film->load(['directors', 'people']);
 
         return new FilmResource($film);
+    }
+
+    public function showcases(string $slug)
+    {
+        $film = Film::where('slug', $slug)->firstOrFail();
+
+        $showcases = FilmList::query()
+            ->where('is_public', true)
+            ->whereHas('items', fn ($query) => $query->where('film_id', $film->id))
+            ->with('user')
+            ->withCount('items')
+            ->latest()
+            ->limit(12)
+            ->get();
+
+        return FilmListResource::collection($showcases);
+    }
+
+    public function friendsActivity(Request $request, string $slug)
+    {
+        $film = Film::where('slug', $slug)->firstOrFail();
+        $followingIds = $request->user()->following()->pluck('users.id');
+
+        $logs = LogEntry::query()
+            ->where('film_id', $film->id)
+            ->whereIn('user_id', $followingIds)
+            ->with('user')
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return LogResource::collection($logs);
     }
 
     public function sync(Request $request)

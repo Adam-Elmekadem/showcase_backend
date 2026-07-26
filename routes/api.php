@@ -18,6 +18,7 @@ Route::get('/films/discover', [FilmController::class, 'discover']);
 Route::get('/films/genres', [FilmController::class, 'genres']);
 Route::post('/films/sync', [FilmController::class, 'sync']);
 Route::get('/films/{slug}', [FilmController::class, 'show']);
+Route::get('/films/{slug}/showcases', [FilmController::class, 'showcases']);
 
 Route::get('/people/{slug}', [PersonController::class, 'show']);
 
@@ -37,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/me', [UserController::class, 'update']);
     Route::post('/me/favorites', [UserController::class, 'addFavorite']);
     Route::delete('/me/favorites/{filmId}', [UserController::class, 'removeFavorite']);
+
+    Route::get('/films/{slug}/friends-activity', [FilmController::class, 'friendsActivity']);
 
     Route::post('/logs', [LogController::class, 'store']);
     Route::patch('/logs/{log}', [LogController::class, 'update']);
