@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             'location' => $this->location,
             'avatar_url' => $this->avatar_path,
             'member_since' => $this->created_at?->toDateString(),
+            'watchlist_is_public' => (bool) $this->watchlist_is_public,
             'stats' => $this->when(
                 $this->logs_count !== null || $this->lists_count !== null,
                 fn () => [

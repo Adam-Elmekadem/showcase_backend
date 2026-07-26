@@ -29,6 +29,7 @@ class User extends Authenticatable
         'bio',
         'location',
         'avatar_path',
+        'watchlist_is_public',
     ];
 
     /**
@@ -51,6 +52,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'watchlist_is_public' => 'boolean',
         ];
     }
 

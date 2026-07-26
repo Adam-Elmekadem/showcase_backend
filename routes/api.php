@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me/watchlist', [WatchlistController::class, 'index']);
     Route::post('/watchlist', [WatchlistController::class, 'store']);
+    Route::delete('/watchlist', [WatchlistController::class, 'clear']);
     Route::delete('/watchlist/{filmId}', [WatchlistController::class, 'destroy']);
 
     Route::post('/users/{username}/follow', [FollowController::class, 'store']);

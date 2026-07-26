@@ -13,11 +13,15 @@ class WatchlistController extends Controller
 
     public function index(Request $request)
     {
+        $data = $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ]);
+
         $films = $request->user()
             ->watchlistItems()
             ->with('film')
             ->latest()
-            ->paginate(24)
+            ->paginate($data['per_page'] ?? 24)
             ->through(fn ($item) => $item->film);
 
         return FilmResource::collection($films);
@@ -39,6 +43,13 @@ class WatchlistController extends Controller
     public function destroy(Request $request, int $filmId)
     {
         $request->user()->watchlistItems()->where('film_id', $filmId)->delete();
+
+        return response()->noContent();
+    }
+
+    public function clear(Request $request)
+    {
+        $request->user()->watchlistItems()->delete();
 
         return response()->noContent();
     }

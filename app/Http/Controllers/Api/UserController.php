@@ -57,14 +57,25 @@ class UserController extends Controller
         ]);
     }
 
-    public function watchlist(string $username)
+    public function watchlist(Request $request, string $username)
     {
         $user = User::where('username', $username)->firstOrFail();
+
+        $viewer = $request->user('sanctum');
+        abort_if(
+            ! $user->watchlist_is_public && $viewer?->id !== $user->id,
+            403,
+            'This watchlist is private.'
+        );
+
+        $data = $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ]);
 
         $films = $user->watchlistItems()
             ->with('film')
             ->latest()
-            ->paginate(24)
+            ->paginate($data['per_page'] ?? 24)
             ->through(fn ($item) => $item->film);
 
         return FilmResource::collection($films);
@@ -79,6 +90,7 @@ class UserController extends Controller
             'username' => ['sometimes', 'string', 'max:32', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
             'bio' => ['nullable', 'string', 'max:500'],
             'location' => ['nullable', 'string', 'max:120'],
+            'watchlist_is_public' => ['sometimes', 'boolean'],
         ]);
 
         $user->update($data);
