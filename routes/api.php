@@ -27,6 +27,7 @@ Route::get('/lists/{username}/{slug}', [ListController::class, 'show']);
 
 Route::get('/users/{username}', [UserController::class, 'show']);
 Route::get('/users/{username}/stats', [UserController::class, 'stats']);
+Route::get('/users/{username}/watchlist', [UserController::class, 'watchlist']);
 Route::get('/users/{username}/followers', [FollowController::class, 'followers']);
 Route::get('/users/{username}/following', [FollowController::class, 'following']);
 
@@ -34,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/me', [UserController::class, 'update']);
+    Route::post('/me/favorites', [UserController::class, 'addFavorite']);
+    Route::delete('/me/favorites/{filmId}', [UserController::class, 'removeFavorite']);
 
     Route::post('/logs', [LogController::class, 'store']);
     Route::patch('/logs/{log}', [LogController::class, 'update']);

@@ -3,18 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\FilmResource;
 use App\Http\Resources\UserResource;
 use App\Models\Film;
 use App\Models\User;
+use App\Services\Tmdb\FilmSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    private const MAX_FAVORITES = 5;
+
+    public function __construct(private readonly FilmSyncService $filmSync) {}
+
     public function show(string $username)
     {
         $user = User::where('username', $username)
             ->withCount(['logs', 'lists', 'followers', 'following'])
+            ->with('favoriteFilms.film')
             ->firstOrFail();
 
         return new UserResource($user);
@@ -49,6 +57,19 @@ class UserController extends Controller
         ]);
     }
 
+    public function watchlist(string $username)
+    {
+        $user = User::where('username', $username)->firstOrFail();
+
+        $films = $user->watchlistItems()
+            ->with('film')
+            ->latest()
+            ->paginate(24)
+            ->through(fn ($item) => $item->film);
+
+        return FilmResource::collection($films);
+    }
+
     public function update(Request $request)
     {
         $user = $request->user();
@@ -63,5 +84,40 @@ class UserController extends Controller
         $user->update($data);
 
         return new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following']));
+    }
+
+    public function addFavorite(Request $request)
+    {
+        $data = $request->validate([
+            'tmdb_id' => ['required', 'integer'],
+        ]);
+
+        $user = $request->user();
+        $film = $this->filmSync->findOrSyncByTmdbId($data['tmdb_id']);
+
+        if (! $user->favoriteFilms()->where('film_id', $film->id)->exists()
+            && $user->favoriteFilms()->count() >= self::MAX_FAVORITES) {
+            throw ValidationException::withMessages([
+                'tmdb_id' => ['You can only pick '.self::MAX_FAVORITES.' favorite films. Remove one first.'],
+            ]);
+        }
+
+        $user->favoriteFilms()->firstOrCreate(
+            ['film_id' => $film->id],
+            ['position' => $user->favoriteFilms()->count()]
+        );
+
+        return UserResource::make($user->loadCount(['logs', 'lists', 'followers', 'following'])->load('favoriteFilms.film'));
+    }
+
+    public function removeFavorite(Request $request, int $filmId)
+    {
+        $user = $request->user();
+        $user->favoriteFilms()->where('film_id', $filmId)->delete();
+
+        $user->favoriteFilms()->orderBy('position')->get()->values()
+            ->each(fn ($favorite, $index) => $favorite->update(['position' => $index]));
+
+        return UserResource::make($user->loadCount(['logs', 'lists', 'followers', 'following'])->load('favoriteFilms.film'));
     }
 }

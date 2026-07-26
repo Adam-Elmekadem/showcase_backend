@@ -68,7 +68,9 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return new UserResource(
-            $request->user()->loadCount(['logs', 'lists', 'followers', 'following'])
+            $request->user()
+                ->loadCount(['logs', 'lists', 'followers', 'following'])
+                ->load('favoriteFilms.film')
         );
     }
 }

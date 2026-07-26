@@ -36,6 +36,9 @@ class UserResource extends JsonResource
             'is_followed_by_viewer' => $this->when($viewer !== null && $viewer->id !== $this->id, function () use ($viewer) {
                 return $viewer->following()->where('followee_id', $this->id)->exists();
             }),
+            'favorite_films' => $this->whenLoaded('favoriteFilms', function () {
+                return FilmResource::collection($this->favoriteFilms->pluck('film'));
+            }),
         ];
     }
 }
