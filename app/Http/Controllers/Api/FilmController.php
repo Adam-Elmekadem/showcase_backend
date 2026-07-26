@@ -96,6 +96,7 @@ class FilmController extends Controller
     private function mapSummaries(array $movies): array
     {
         $imageBase = rtrim(config('services.tmdb.image_base_url'), '/');
+        $genreNames = collect($this->tmdb->genreList())->pluck('name', 'id');
 
         return collect($movies)->map(fn ($movie) => [
             'tmdb_id' => $movie['id'],
@@ -105,6 +106,7 @@ class FilmController extends Controller
             'poster_url' => $movie['poster_path'] ? "{$imageBase}/w342{$movie['poster_path']}" : null,
             'overview' => $movie['overview'],
             'vote_average' => $movie['vote_average'] ?? null,
+            'genres' => collect($movie['genre_ids'] ?? [])->map(fn ($id) => $genreNames->get($id))->filter()->values()->all(),
         ])->values()->all();
     }
 }
