@@ -21,7 +21,7 @@ class ListController extends Controller
         ]);
 
         $lists = FilmList::query()
-            ->with('user')
+            ->with(['user', 'items' => fn ($query) => $query->orderBy('position')->limit(3)->with('film')])
             ->withCount('items')
             ->when(! ($data['username'] ?? null), fn ($query) => $query->where('is_public', true))
             ->when($data['username'] ?? null, fn ($query, $username) => $query->whereHas(
