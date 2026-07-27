@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Comment;
 use App\Models\Film;
 use App\Models\FilmList;
 use App\Models\LogEntry;
@@ -27,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
             'film' => Film::class,
             'showcase' => FilmList::class,
             'log' => LogEntry::class,
+            'comment' => Comment::class,
         ]);
     }
 }

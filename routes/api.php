@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\FilmController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\LogController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PersonController;
 use App\Http\Controllers\Api\SuggestionController;
 use App\Http\Controllers\Api\UserController;
@@ -74,4 +75,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+
+    Route::get('/me/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::patch('/me/notifications/read-all', [NotificationController::class, 'markAllRead']);
 });

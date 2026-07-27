@@ -86,6 +86,11 @@ class User extends Authenticatable
         return $this->hasMany(Suggestion::class, 'sender_id');
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     public function following(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'follows', 'follower_id', 'followee_id')->withTimestamps();

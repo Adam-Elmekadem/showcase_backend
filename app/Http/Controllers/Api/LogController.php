@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLogRequest;
 use App\Http\Resources\LogResource;
 use App\Models\LogEntry;
+use App\Models\Notification;
 use App\Services\Tmdb\FilmSyncService;
 use Illuminate\Http\Request;
 
@@ -128,6 +129,16 @@ class LogController extends Controller
 
         if ($created->wasRecentlyCreated) {
             $log->increment('likes_count');
+
+            if ($log->user_id !== $request->user()->id) {
+                Notification::create([
+                    'user_id' => $log->user_id,
+                    'actor_id' => $request->user()->id,
+                    'type' => 'like',
+                    'notifiable_type' => 'log',
+                    'notifiable_id' => $log->id,
+                ]);
+            }
         }
 
         return new LogResource($log->fresh(['user', 'film'])->loadCount('comments'));

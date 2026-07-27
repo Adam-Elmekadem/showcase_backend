@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
+use App\Models\Notification;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -57,6 +58,8 @@ class CommentController extends Controller
             'body' => $data['body'],
         ]);
 
+        $this->notifyForComment($request, $comment, $target, $parent ?? null);
+
         return new CommentResource($comment->load('user'));
     }
 
@@ -67,5 +70,34 @@ class CommentController extends Controller
         $comment->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Replies notify the parent comment's author. Top-level comments notify
+     * the commentable's owner, if it has one -- films have no single owner,
+     * so a top-level comment on a film notifies no one.
+     */
+    private function notifyForComment(Request $request, Comment $comment, $target, ?Comment $parent): void
+    {
+        $actorId = $request->user()->id;
+        $recipientId = null;
+
+        if ($parent) {
+            if ($parent->user_id !== $actorId) {
+                $recipientId = $parent->user_id;
+            }
+        } elseif (isset($target->user_id) && $target->user_id !== $actorId) {
+            $recipientId = $target->user_id;
+        }
+
+        if ($recipientId) {
+            Notification::create([
+                'user_id' => $recipientId,
+                'actor_id' => $actorId,
+                'type' => 'comment',
+                'notifiable_type' => 'comment',
+                'notifiable_id' => $comment->id,
+            ]);
+        }
     }
 }
