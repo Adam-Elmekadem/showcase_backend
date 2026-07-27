@@ -34,6 +34,7 @@ class StoreLogRequest extends FormRequest
             'rating_cinematography' => $rating,
             'rating_music' => $rating,
             'review' => ['nullable', 'string', 'max:10000'],
+            'quote' => ['nullable', 'string', 'max:500'],
             'contains_spoilers' => ['boolean'],
         ];
     }

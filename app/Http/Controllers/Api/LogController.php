@@ -62,6 +62,7 @@ class LogController extends Controller
             'rating_cinematography' => $data['rating_cinematography'] ?? null,
             'rating_music' => $data['rating_music'] ?? null,
             'review' => $data['review'] ?? null,
+            'quote' => $data['quote'] ?? null,
             'contains_spoilers' => $data['contains_spoilers'] ?? false,
         ]);
 

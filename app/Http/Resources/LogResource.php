@@ -29,6 +29,7 @@ class LogResource extends JsonResource
                 'music' => $this->rating_music,
             ],
             'review' => $this->review,
+            'quote' => $this->quote,
             'contains_spoilers' => $this->contains_spoilers,
             'likes_count' => $this->likes_count,
             'liked_by_viewer' => $this->when($viewer !== null, function () use ($viewer) {
