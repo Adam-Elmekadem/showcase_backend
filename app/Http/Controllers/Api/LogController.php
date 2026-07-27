@@ -19,7 +19,11 @@ class LogController extends Controller
             'username' => ['nullable', 'string'],
             'film_slug' => ['nullable', 'string'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'following' => ['nullable', 'boolean'],
         ]);
+
+        $viewer = $request->user('sanctum');
+        $followingOnly = $request->boolean('following');
 
         $logs = LogEntry::query()
             ->with(['user', 'film'])
@@ -29,6 +33,9 @@ class LogController extends Controller
             ))
             ->when($data['film_slug'] ?? null, fn ($query, $slug) => $query->whereHas(
                 'film', fn ($q) => $q->where('slug', $slug)
+            ))
+            ->when($followingOnly, fn ($query) => $query->whereIn(
+                'user_id', $viewer ? $viewer->following()->pluck('users.id') : []
             ))
             ->latest()
             ->paginate($data['per_page'] ?? 20);
