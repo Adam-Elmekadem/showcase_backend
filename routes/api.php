@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PersonController;
 use App\Http\Controllers\Api\SuggestionController;
+use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WatchlistController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/lists/{list}', [ListController::class, 'destroy']);
     Route::post('/lists/{list}/items', [ListController::class, 'addItem']);
     Route::delete('/lists/{list}/items/{filmId}', [ListController::class, 'removeItem']);
+    Route::patch('/lists/{list}/items/reorder', [ListController::class, 'reorderItems']);
 
     Route::get('/me/watchlist', [WatchlistController::class, 'index']);
     Route::post('/watchlist', [WatchlistController::class, 'store']);
@@ -79,4 +81,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
     Route::patch('/me/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+    Route::post('/uploads/cloudinary-sign', [UploadController::class, 'signCloudinaryUpload']);
 });

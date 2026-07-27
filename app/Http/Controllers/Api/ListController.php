@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFilmListRequest;
 use App\Http\Resources\FilmListResource;
 use App\Models\FilmList;
+use App\Models\ListItem;
 use App\Services\Tmdb\FilmSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -108,6 +109,26 @@ class ListController extends Controller
         abort_if($list->user_id !== $request->user()->id, 403);
 
         $list->items()->where('film_id', $filmId)->delete();
+
+        return new FilmListResource($list->fresh(['user', 'items.film']));
+    }
+
+    public function reorderItems(Request $request, FilmList $list)
+    {
+        abort_if($list->user_id !== $request->user()->id, 403);
+
+        $data = $request->validate([
+            'item_ids' => ['required', 'array'],
+            'item_ids.*' => ['integer'],
+        ]);
+
+        $ownItemIds = $list->items()->pluck('id')->sort()->values()->all();
+        $submitted = collect($data['item_ids'])->sort()->values()->all();
+        abort_if($ownItemIds !== $submitted, 422, 'The submitted items do not match this showcase.');
+
+        foreach ($data['item_ids'] as $position => $itemId) {
+            ListItem::where('id', $itemId)->where('film_list_id', $list->id)->update(['position' => $position + 1]);
+        }
 
         return new FilmListResource($list->fresh(['user', 'items.film']));
     }
