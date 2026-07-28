@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\FilmController;
+use App\Http\Controllers\Api\FilmLikeController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\LogController;
@@ -65,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/watchlist', [WatchlistController::class, 'store']);
     Route::delete('/watchlist', [WatchlistController::class, 'clear']);
     Route::delete('/watchlist/{filmId}', [WatchlistController::class, 'destroy']);
+
+    Route::post('/film-likes', [FilmLikeController::class, 'store']);
+    Route::delete('/film-likes/{filmId}', [FilmLikeController::class, 'destroy']);
 
     Route::post('/users/{username}/follow', [FollowController::class, 'store']);
     Route::delete('/users/{username}/follow', [FollowController::class, 'destroy']);

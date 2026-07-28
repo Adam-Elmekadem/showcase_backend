@@ -155,6 +155,7 @@ class FilmController extends Controller
 
         $viewer = $request?->user('sanctum');
         $viewerLogsByTmdbId = collect();
+        $viewerLikedTmdbIds = collect();
 
         if ($viewer) {
             $tmdbIds = collect($movies)->pluck('id');
@@ -166,9 +167,16 @@ class FilmController extends Controller
                 ->get()
                 ->unique(fn ($log) => $log->film->tmdb_id)
                 ->keyBy(fn ($log) => $log->film->tmdb_id);
+
+            $viewerLikedTmdbIds = $viewer->filmLikes()
+                ->whereHas('film', fn ($query) => $query->whereIn('tmdb_id', $tmdbIds))
+                ->with('film:id,tmdb_id')
+                ->get()
+                ->pluck('film.tmdb_id')
+                ->flip();
         }
 
-        return collect($movies)->map(function ($movie) use ($imageBase, $genreNames, $viewerLogsByTmdbId) {
+        return collect($movies)->map(function ($movie) use ($imageBase, $genreNames, $viewerLogsByTmdbId, $viewerLikedTmdbIds) {
             $viewerLog = $viewerLogsByTmdbId->get($movie['id']);
 
             return [
@@ -183,6 +191,7 @@ class FilmController extends Controller
                 'viewer_watched' => (bool) $viewerLog,
                 'viewer_rating' => $viewerLog?->rating_overall,
                 'viewer_log_id' => $viewerLog?->id,
+                'viewer_liked' => $viewerLikedTmdbIds->has($movie['id']),
             ];
         })->values()->all();
     }

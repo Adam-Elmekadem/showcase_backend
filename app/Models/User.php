@@ -71,6 +71,11 @@ class User extends Authenticatable
         return $this->hasMany(WatchlistItem::class);
     }
 
+    public function filmLikes(): HasMany
+    {
+        return $this->hasMany(FilmLike::class);
+    }
+
     public function favoriteFilms(): HasMany
     {
         return $this->hasMany(FavoriteFilm::class)->orderBy('position');

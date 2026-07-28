@@ -63,4 +63,9 @@ class Film extends Model
     {
         return $this->morphMany(Comment::class, 'commentable');
     }
+
+    public function likes(): HasMany
+    {
+        return $this->hasMany(FilmLike::class);
+    }
 }
