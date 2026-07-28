@@ -30,7 +30,7 @@ class AuthController extends Controller
         $token = $user->createToken('showcase')->plainTextToken;
 
         return response()->json([
-            'user' => new UserResource($user),
+            'user' => new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following'])->load('favoriteFilms.film')),
             'token' => $token,
         ], 201);
     }
@@ -53,7 +53,7 @@ class AuthController extends Controller
         $token = $user->createToken('showcase')->plainTextToken;
 
         return response()->json([
-            'user' => new UserResource($user),
+            'user' => new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following'])->load('favoriteFilms.film')),
             'token' => $token,
         ]);
     }
