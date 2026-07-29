@@ -9,7 +9,6 @@ use App\Models\Film;
 use App\Models\User;
 use App\Services\Tmdb\FilmSyncService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -113,30 +112,13 @@ class UserController extends Controller
             'bio' => ['nullable', 'string', 'max:500'],
             'location' => ['nullable', 'string', 'max:120'],
             'watchlist_is_public' => ['sometimes', 'boolean'],
+            // The client uploads the image straight to Cloudinary (see
+            // UploadController::signCloudinaryUpload) and only sends us back
+            // the resulting secure_url — we never handle the file itself.
+            'avatar_path' => ['sometimes', 'nullable', 'url', 'max:2048'],
         ]);
 
         $user->update($data);
-
-        return new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following']));
-    }
-
-    public function updateAvatar(Request $request)
-    {
-        $data = $request->validate([
-            'avatar' => ['required', 'image', 'max:5120'],
-        ]);
-
-        $user = $request->user();
-
-        // Clean up the previous avatar if it was one we stored ourselves
-        // (skip anything that isn't one of our own /storage URLs).
-        $publicUrlPrefix = rtrim(config('app.url'), '/').'/storage/';
-        if ($user->avatar_path && str_starts_with($user->avatar_path, $publicUrlPrefix)) {
-            Storage::disk('public')->delete(str_replace($publicUrlPrefix, '', $user->avatar_path));
-        }
-
-        $path = $request->file('avatar')->store('avatars', 'public');
-        $user->update(['avatar_path' => $publicUrlPrefix.$path]);
 
         return new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following']));
     }

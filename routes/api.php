@@ -50,7 +50,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/me', [UserController::class, 'update']);
-    Route::post('/me/avatar', [UserController::class, 'updateAvatar']);
     Route::post('/me/favorites', [UserController::class, 'addFavorite']);
     Route::delete('/me/favorites/{filmId}', [UserController::class, 'removeFavorite']);
 
