@@ -21,10 +21,14 @@ class LogController extends Controller
             'film_slug' => ['nullable', 'string'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             'following' => ['nullable', 'boolean'],
+            'type' => ['nullable', 'in:quote,review'],
+            'category' => ['nullable', 'string'],
+            'search' => ['nullable', 'string', 'max:200'],
         ]);
 
         $viewer = $request->user('sanctum');
         $followingOnly = $request->boolean('following');
+        $type = $data['type'] ?? null;
 
         $logs = LogEntry::query()
             ->with(['user', 'film'])
@@ -38,6 +42,20 @@ class LogController extends Controller
             ->when($followingOnly, fn ($query) => $query->whereIn(
                 'user_id', $viewer ? $viewer->following()->pluck('users.id') : []
             ))
+            ->when($type === 'quote', fn ($query) => $query->whereNotNull('quote'))
+            ->when($type === 'review', fn ($query) => $query->whereNotNull('review'))
+            ->when($data['category'] ?? null, fn ($query, $category) => $query->where('quote_category', $category))
+            ->when($data['search'] ?? null, function ($query, $search) use ($type) {
+                $query->where(function ($q) use ($search, $type) {
+                    if ($type === 'quote') {
+                        $q->where('quote', 'like', "%{$search}%");
+                    } elseif ($type === 'review') {
+                        $q->where('review', 'like', "%{$search}%");
+                    } else {
+                        $q->where('quote', 'like', "%{$search}%")->orWhere('review', 'like', "%{$search}%");
+                    }
+                });
+            })
             ->latest()
             ->paginate($data['per_page'] ?? 20);
 
@@ -63,6 +81,7 @@ class LogController extends Controller
             'rating_music' => $data['rating_music'] ?? null,
             'review' => $data['review'] ?? null,
             'quote' => $data['quote'] ?? null,
+            'quote_category' => $data['quote_category'] ?? null,
             'contains_spoilers' => $data['contains_spoilers'] ?? false,
         ]);
 
