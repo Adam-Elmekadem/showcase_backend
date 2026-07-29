@@ -14,7 +14,12 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $viewer = $request->user();
+        // Explicit 'sanctum' guard so this resolves the Bearer-token viewer even on
+        // routes that aren't behind the auth:sanctum middleware (e.g. the public
+        // show/search endpoints) — $request->user() alone only works when the
+        // route itself is gated, since it falls back to the session-based 'web'
+        // guard otherwise and is always null for a token-only API request.
+        $viewer = $request->user('sanctum');
 
         return [
             'id' => $this->id,

@@ -36,6 +36,10 @@ Route::get('/logs', [LogController::class, 'index']);
 Route::get('/lists', [ListController::class, 'index']);
 Route::get('/lists/{username}/{slug}', [ListController::class, 'show']);
 
+// Registered ahead of the /users/{username} wildcard below so "search" isn't
+// swallowed as a username, and gated behind auth so $request->user() actually
+// resolves the viewer for self-exclusion + is_followed_by_viewer.
+Route::middleware('auth:sanctum')->get('/users/search', [UserController::class, 'search']);
 Route::get('/users/{username}', [UserController::class, 'show']);
 Route::get('/users/{username}/stats', [UserController::class, 'stats']);
 Route::get('/users/{username}/watchlist', [UserController::class, 'watchlist']);
@@ -46,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/me', [UserController::class, 'update']);
+    Route::post('/me/avatar', [UserController::class, 'updateAvatar']);
     Route::post('/me/favorites', [UserController::class, 'addFavorite']);
     Route::delete('/me/favorites/{filmId}', [UserController::class, 'removeFavorite']);
 

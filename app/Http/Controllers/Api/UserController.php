@@ -9,6 +9,7 @@ use App\Models\Film;
 use App\Models\User;
 use App\Services\Tmdb\FilmSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -17,6 +18,27 @@ class UserController extends Controller
     private const MAX_FAVORITES = 5;
 
     public function __construct(private readonly FilmSyncService $filmSync) {}
+
+    public function search(Request $request)
+    {
+        $data = $request->validate([
+            'q' => ['required', 'string', 'min:1', 'max:50'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+        ]);
+
+        $viewer = $request->user();
+
+        $users = User::query()
+            ->where(fn ($query) => $query
+                ->where('name', 'like', "%{$data['q']}%")
+                ->orWhere('username', 'like', "%{$data['q']}%"))
+            ->when($viewer, fn ($query) => $query->where('id', '!=', $viewer->id))
+            ->withCount(['followers', 'following'])
+            ->orderBy('name')
+            ->paginate($data['per_page'] ?? 20);
+
+        return UserResource::collection($users);
+    }
 
     public function show(string $username)
     {
@@ -94,6 +116,27 @@ class UserController extends Controller
         ]);
 
         $user->update($data);
+
+        return new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following']));
+    }
+
+    public function updateAvatar(Request $request)
+    {
+        $data = $request->validate([
+            'avatar' => ['required', 'image', 'max:5120'],
+        ]);
+
+        $user = $request->user();
+
+        // Clean up the previous avatar if it was one we stored ourselves
+        // (skip anything that isn't one of our own /storage URLs).
+        $publicUrlPrefix = rtrim(config('app.url'), '/').'/storage/';
+        if ($user->avatar_path && str_starts_with($user->avatar_path, $publicUrlPrefix)) {
+            Storage::disk('public')->delete(str_replace($publicUrlPrefix, '', $user->avatar_path));
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->update(['avatar_path' => $publicUrlPrefix.$path]);
 
         return new UserResource($user->loadCount(['logs', 'lists', 'followers', 'following']));
     }

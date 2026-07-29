@@ -14,7 +14,8 @@ class CommentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $viewer = $request->user();
+        // See UserResource for why this needs the explicit 'sanctum' guard.
+        $viewer = $request->user('sanctum');
 
         return [
             'id' => $this->id,
