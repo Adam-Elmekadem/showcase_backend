@@ -136,6 +136,60 @@ class FilmController extends Controller
         return LogResource::collection($logs);
     }
 
+    public function related(Request $request, string $slug)
+    {
+        $film = Film::where('slug', $slug)->firstOrFail();
+        $film->load('directors');
+
+        $recommended = $this->tmdb->movieRecommendations($film->tmdb_id);
+
+        $moreFromDirector = collect();
+        if ($film->directors->isNotEmpty()) {
+            $moreFromDirector = Film::query()
+                ->where('id', '!=', $film->id)
+                ->whereHas('people', fn ($query) => $query->whereIn('people.id', $film->directors->pluck('id'))->where('film_credits.role', 'director'))
+                ->limit(6)
+                ->get();
+        }
+
+        return response()->json([
+            'data' => [
+                'recommended' => $this->mapSummaries($recommended, $request),
+                'more_from_director' => FilmResource::collection($moreFromDirector),
+            ],
+        ]);
+    }
+
+    public function watchProviders(Request $request, string $slug)
+    {
+        $data = $request->validate([
+            'region' => ['nullable', 'string', 'size:2'],
+        ]);
+
+        $film = Film::where('slug', $slug)->firstOrFail();
+        $providers = $this->tmdb->watchProviders($film->tmdb_id);
+
+        $region = strtoupper($data['region'] ?? 'US');
+        $entry = $providers[$region] ?? $providers['US'] ?? null;
+
+        $imageBase = rtrim(config('services.tmdb.image_base_url'), '/');
+        $mapProvider = fn ($provider) => [
+            'id' => $provider['provider_id'],
+            'name' => $provider['provider_name'],
+            'logo_url' => $provider['logo_path'] ? "{$imageBase}/w92{$provider['logo_path']}" : null,
+        ];
+
+        return response()->json([
+            'data' => [
+                'region' => $entry ? $region : null,
+                'link' => $entry['link'] ?? null,
+                'flatrate' => collect($entry['flatrate'] ?? [])->map($mapProvider)->values()->all(),
+                'rent' => collect($entry['rent'] ?? [])->map($mapProvider)->values()->all(),
+                'buy' => collect($entry['buy'] ?? [])->map($mapProvider)->values()->all(),
+            ],
+        ]);
+    }
+
     public function sync(Request $request)
     {
         $data = $request->validate([

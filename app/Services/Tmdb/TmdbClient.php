@@ -65,6 +65,20 @@ class TmdbClient
         });
     }
 
+    public function movieRecommendations(int $tmdbId): array
+    {
+        return Cache::remember("tmdb:movie-recommendations:{$tmdbId}", now()->addDay(), function () use ($tmdbId) {
+            return $this->get("/movie/{$tmdbId}/recommendations")['results'] ?? [];
+        });
+    }
+
+    public function watchProviders(int $tmdbId): array
+    {
+        return Cache::remember("tmdb:watch-providers:{$tmdbId}", now()->addDay(), function () use ($tmdbId) {
+            return $this->get("/movie/{$tmdbId}/watch/providers")['results'] ?? [];
+        });
+    }
+
     private function get(string $path, array $query = []): array
     {
         if ($this->key === '') {

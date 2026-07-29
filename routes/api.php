@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\FilmLikeController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\LogController;
+use App\Http\Controllers\Api\MentionController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PersonController;
 use App\Http\Controllers\Api\SuggestionController;
@@ -24,6 +25,8 @@ Route::get('/films/genres', [FilmController::class, 'genres']);
 Route::post('/films/sync', [FilmController::class, 'sync']);
 Route::get('/films/{slug}', [FilmController::class, 'show']);
 Route::get('/films/{slug}/showcases', [FilmController::class, 'showcases']);
+Route::get('/films/{slug}/related', [FilmController::class, 'related']);
+Route::get('/films/{slug}/watch-providers', [FilmController::class, 'watchProviders']);
 
 Route::get('/people/{slug}', [PersonController::class, 'show']);
 
@@ -81,6 +84,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+
+    Route::get('/mentions/search', [MentionController::class, 'search']);
 
     Route::get('/me/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);

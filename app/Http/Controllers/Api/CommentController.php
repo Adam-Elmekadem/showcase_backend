@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -59,6 +60,7 @@ class CommentController extends Controller
         ]);
 
         $this->notifyForComment($request, $comment, $target, $parent ?? null);
+        $this->notifyMentions($request, $comment);
 
         return new CommentResource($comment->load('user'));
     }
@@ -99,5 +101,35 @@ class CommentController extends Controller
                 'notifiable_id' => $comment->id,
             ]);
         }
+    }
+
+    /**
+     * Comment bodies carry mention tokens like "@[Name](user:username)".
+     * Any mentioned platform user (other than the author) gets notified;
+     * person mentions ("person:slug") are just links, not accounts.
+     */
+    private function notifyMentions(Request $request, Comment $comment): void
+    {
+        preg_match_all('/@\[[^\]]+\]\(user:([a-zA-Z0-9_.-]+)\)/', $comment->body, $matches);
+        $usernames = array_unique($matches[1] ?? []);
+
+        if (empty($usernames)) {
+            return;
+        }
+
+        $actorId = $request->user()->id;
+
+        User::whereIn('username', $usernames)
+            ->where('id', '!=', $actorId)
+            ->pluck('id')
+            ->each(function (int $userId) use ($actorId, $comment) {
+                Notification::create([
+                    'user_id' => $userId,
+                    'actor_id' => $actorId,
+                    'type' => 'mention',
+                    'notifiable_type' => 'comment',
+                    'notifiable_id' => $comment->id,
+                ]);
+            });
     }
 }
