@@ -4,18 +4,25 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UploadController extends Controller
 {
+    private const FOLDERS = ['showcase-covers', 'avatars'];
+
     /**
      * Sign a direct-to-Cloudinary upload so the API secret never reaches
-     * the browser. The client uploads the file straight to Cloudinary
+     * the client. The client uploads the file straight to Cloudinary
      * using this signature, timestamp, and api_key.
      */
     public function signCloudinaryUpload(Request $request)
     {
+        $data = $request->validate([
+            'folder' => ['nullable', 'string', Rule::in(self::FOLDERS)],
+        ]);
+
         $timestamp = time();
-        $folder = 'showcase-covers';
+        $folder = $data['folder'] ?? 'showcase-covers';
 
         $paramsToSign = [
             'folder' => $folder,
