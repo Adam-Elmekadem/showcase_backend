@@ -24,6 +24,7 @@ class LogEntry extends Model
         'rating_music',
         'review',
         'quote',
+        'quote_category',
         'contains_spoilers',
     ];
 
