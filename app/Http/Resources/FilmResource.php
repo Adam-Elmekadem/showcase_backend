@@ -38,6 +38,15 @@ class FilmResource extends JsonResource
             'viewer_watched' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->exists()),
             'viewer_rating' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->latest()->value('rating_overall')),
             'viewer_log_id' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->latest()->value('id')),
+            // How many times the viewer has logged this film (a bare
+            // double-tap-to-watch mark counts same as a full review) and
+            // whether any of those logs carry real content -- once one does,
+            // a further double-tap should never delete it, only add a
+            // rewatch, so the two are tracked separately from viewer_watched.
+            'viewer_watch_count' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)->count()),
+            'viewer_has_content_log' => $this->when($request->user('sanctum'), fn () => $this->logs()->where('user_id', $request->user('sanctum')->id)
+                ->where(fn ($q) => $q->whereNotNull('review')->orWhereNotNull('quote')->orWhereNotNull('rating_overall'))
+                ->exists()),
             'directors' => PersonResource::collection($this->whenLoaded('directors')),
             'credits' => $this->when($this->relationLoaded('people'), function () {
                 return $this->people->groupBy('pivot.role')->map(
