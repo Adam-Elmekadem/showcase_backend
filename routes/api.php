@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChallengeController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\FilmController;
 use App\Http\Controllers\Api\FilmLikeController;
@@ -57,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/films/{slug}/my-showcases', [FilmController::class, 'myShowcases']);
 
     Route::post('/logs', [LogController::class, 'store']);
+    Route::get('/logs/{log}', [LogController::class, 'show']);
     Route::patch('/logs/{log}', [LogController::class, 'update']);
     Route::delete('/logs/{log}', [LogController::class, 'destroy']);
     Route::post('/logs/{log}/like', [LogController::class, 'like']);
@@ -96,4 +98,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/me/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
     Route::post('/uploads/cloudinary-sign', [UploadController::class, 'signCloudinaryUpload']);
+
+    Route::get('/challenges', [ChallengeController::class, 'index']);
 });

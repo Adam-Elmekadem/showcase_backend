@@ -11,6 +11,7 @@ class Suggestion extends Model
         'sender_id',
         'recipient_id',
         'film_id',
+        'film_list_id',
         'message',
         'read_at',
     ];
@@ -35,5 +36,10 @@ class Suggestion extends Model
     public function film(): BelongsTo
     {
         return $this->belongsTo(Film::class);
+    }
+
+    public function filmList(): BelongsTo
+    {
+        return $this->belongsTo(FilmList::class);
     }
 }

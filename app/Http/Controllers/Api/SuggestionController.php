@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SuggestionResource;
+use App\Models\FilmList;
 use App\Models\Suggestion;
 use App\Models\User;
 use App\Services\Tmdb\FilmSyncService;
@@ -18,7 +19,7 @@ class SuggestionController extends Controller
     {
         $suggestions = $request->user()
             ->suggestionsReceived()
-            ->with(['sender', 'film'])
+            ->with(['sender', 'film', 'filmList'])
             ->latest()
             ->paginate(20);
 
@@ -30,29 +31,38 @@ class SuggestionController extends Controller
         $recipient = User::where('username', $username)->firstOrFail();
         $sender = $request->user();
 
-        abort_if($recipient->id === $sender->id, 422, 'You cannot suggest a film to yourself.');
+        abort_if($recipient->id === $sender->id, 422, 'You cannot send a suggestion to yourself.');
 
         if (! $sender->isMutualWith($recipient)) {
             throw ValidationException::withMessages([
-                'username' => ['You can only suggest films to people who follow you back.'],
+                'username' => ['You can only send suggestions to people who follow you back.'],
             ]);
         }
 
         $data = $request->validate([
-            'tmdb_id' => ['required', 'integer'],
+            'tmdb_id' => ['required_without:list_id', 'integer'],
+            'list_id' => ['required_without:tmdb_id', 'integer'],
             'message' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $film = $this->filmSync->findOrSyncByTmdbId($data['tmdb_id']);
-
-        $suggestion = Suggestion::create([
+        $attributes = [
             'sender_id' => $sender->id,
             'recipient_id' => $recipient->id,
-            'film_id' => $film->id,
             'message' => $data['message'] ?? null,
-        ]);
+        ];
 
-        return new SuggestionResource($suggestion->load(['sender', 'film']));
+        if (isset($data['tmdb_id'])) {
+            $film = $this->filmSync->findOrSyncByTmdbId($data['tmdb_id']);
+            $attributes['film_id'] = $film->id;
+        } else {
+            $list = FilmList::findOrFail($data['list_id']);
+            abort_if(! $list->is_public && $list->user_id !== $sender->id, 403, 'This showcase is private.');
+            $attributes['film_list_id'] = $list->id;
+        }
+
+        $suggestion = Suggestion::create($attributes);
+
+        return new SuggestionResource($suggestion->load(['sender', 'film', 'filmList']));
     }
 
     public function destroy(Request $request, Suggestion $suggestion)

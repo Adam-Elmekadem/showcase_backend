@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PersonResource;
+use App\Models\Film;
 use App\Models\Person;
 use App\Services\Tmdb\TmdbClient;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 class PersonController extends Controller
@@ -20,7 +22,7 @@ class PersonController extends Controller
 
     public function __construct(private readonly TmdbClient $tmdb) {}
 
-    public function show(string $slug)
+    public function show(Request $request, string $slug)
     {
         $person = Person::where('slug', $slug)->firstOrFail();
 
@@ -61,8 +63,22 @@ class PersonController extends Controller
                     ->values();
             });
 
+        $extra = [];
+        if ($viewer = $request->user('sanctum')) {
+            // The director filmography comes live from TMDB, not local film
+            // rows -- most of these films are never synced locally until a
+            // user actually opens/logs that specific one. So "watched" has
+            // to cross-reference tmdb_ids against locally-synced Films that
+            // happen to have a log for this viewer, not a local relation.
+            $directorTmdbIds = $grouped->get('director', collect())->pluck('tmdb_id');
+            $extra['viewer_total_director_films'] = $directorTmdbIds->count();
+            $extra['viewer_watched_director_films'] = $directorTmdbIds->isEmpty() ? 0 : Film::whereIn('tmdb_id', $directorTmdbIds)
+                ->whereHas('logs', fn ($q) => $q->where('user_id', $viewer->id))
+                ->count();
+        }
+
         return response()->json([
-            'data' => (new PersonResource($person))->resolve() + [
+            'data' => (new PersonResource($person))->resolve() + $extra + [
                 'filmography' => $grouped,
             ],
         ]);

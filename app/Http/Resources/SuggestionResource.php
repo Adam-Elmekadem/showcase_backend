@@ -19,7 +19,8 @@ class SuggestionResource extends JsonResource
             'message' => $this->message,
             'read_at' => $this->read_at?->toIso8601String(),
             'sender' => new UserResource($this->whenLoaded('sender')),
-            'film' => new FilmResource($this->whenLoaded('film')),
+            'film' => $this->film_id ? new FilmResource($this->whenLoaded('film')) : null,
+            'showcase' => $this->film_list_id ? new FilmListResource($this->whenLoaded('filmList')) : null,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
