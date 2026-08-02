@@ -19,7 +19,7 @@ class SuggestionController extends Controller
     {
         $suggestions = $request->user()
             ->suggestionsReceived()
-            ->with(['sender', 'film', 'filmList'])
+            ->with(['sender', 'film', 'filmList.user'])
             ->latest()
             ->paginate(20);
 
@@ -62,7 +62,7 @@ class SuggestionController extends Controller
 
         $suggestion = Suggestion::create($attributes);
 
-        return new SuggestionResource($suggestion->load(['sender', 'film', 'filmList']));
+        return new SuggestionResource($suggestion->load(['sender', 'film', 'filmList.user']));
     }
 
     public function destroy(Request $request, Suggestion $suggestion)
@@ -80,6 +80,6 @@ class SuggestionController extends Controller
 
         $suggestion->update(['read_at' => now()]);
 
-        return new SuggestionResource($suggestion->load(['sender', 'film']));
+        return new SuggestionResource($suggestion->load(['sender', 'film', 'filmList.user']));
     }
 }
